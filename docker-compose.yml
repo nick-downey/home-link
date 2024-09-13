@@ -1,0 +1,52 @@
+version: "3.4"
+services:
+  # -- Database --
+  db:
+    image: postgres:16.1
+    ports:
+      - 5432:5432
+    command: ['postgres', '-c', 'log_statement=all', '-c', 'max_connections=10'] # TODO: what num for max_connections?
+    environment:
+      - PG_PASSWORD=downeypassword
+
+
+  # -- Database Migration --
+  db_migrate:
+    environment:
+      - FLYWAY_USER=postgres
+      - FLYWAY_PASSWORD=downeypassword
+      - FLYWAY_URL=jdbc:postgresql://db/postgres
+    depends_on:
+      - db
+
+  # -- Backend --
+  server:
+    # TODO: define server
+    environment:
+      - PGHOST=db
+      - PGPORT=5432
+      - PGDATABASE=postgres
+      - PGUSER=postgres
+      - PGPASS=downeypassword
+      - PGSSLMODE=disable
+      - DB_MAX_CONNECTIONS=10 # TODO: what num for max_connections?
+    depends_on:
+      db_migrate:
+        condition: service_completed_successfully # Only start if migrations completed successfully
+
+  # -- Frontend --
+  client:
+    # TODO: define client
+
+  vite_docker:
+   image: node:alpine
+   container_name: vite_docker
+   entrypoint: /bin/sh
+   ports:
+     - 8000:8000
+   working_dir: /srv/app
+   volumes:
+     - type: bind
+       source: ./
+       target: /srv/app
+   tty: true
